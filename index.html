@@ -386,7 +386,7 @@ function llenarFiltros(data){
 }
 
 function actualizarEstadisticas(data){
-  const total=data.length-1;
+  const total=data.filter(d=>d._genero==='M').length + data.filter(d=>d._genero==='F').length;
   const paid=data.filter(d=>d._estado==='Pagado').length;
   const pend=data.filter(d=>d._estado==='Pendiente').length;
   const money=data.reduce((s,d)=>s+(d._monto||0),0);
