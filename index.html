@@ -386,7 +386,7 @@ function llenarFiltros(data){
 }
 
 function actualizarEstadisticas(data){
-  const total=data.length;
+  const total=data.length-1;
   const paid=data.filter(d=>d._estado==='Pagado').length;
   const pend=data.filter(d=>d._estado==='Pendiente').length;
   const money=data.reduce((s,d)=>s+(d._monto||0),0);
@@ -435,7 +435,7 @@ function actualizarGraficos(data){
   if(chartGender) chartGender.destroy();
   chartGender=new Chart(document.getElementById('chartGender'),{
     type:'doughnut',
-    data:{labels:['Hombres','Mujeres','Otro'],datasets:[{data:[males,females,other],backgroundColor:COLORS,borderWidth:0}]},
+    data:{labels:['Hombres','Mujeres'],datasets:[{data:[males,females],backgroundColor:COLORS,borderWidth:0}]},
     options:donutOpts
   });
 
