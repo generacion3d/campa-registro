@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>CampaZonal Pro • Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator_bootstrap5.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --indigo:#4f46e5; --indigo-dark:#3730a3; --indigo-light:#eef2ff;
+      --green:#10b981; --amber:#f59e0b; --red:#ef4444; --pink:#ec4899; --sky:#0ea5e9;
+      --slate-50:#f8fafc; --slate-100:#f1f5f9; --slate-200:#e2e8f0;
+      --slate-400:#94a3b8; --slate-600:#475569; --slate-800:#1e293b;
+      --radius:14px;
+    }
+    *{box-sizing:border-box;}
+    body{font-family:'Inter',sans-serif;background:var(--slate-50);color:var(--slate-800);margin:0;}
+
+    /* SIDEBAR */
+    .sidebar{position:fixed;top:0;left:0;height:100vh;width:64px;background:white;border-right:1px solid var(--slate-200);display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:8px;z-index:200;}
+    .sidebar .brand{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:14px;margin-bottom:16px;}
+    .sidebar .nav-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--slate-400);font-size:16px;cursor:pointer;transition:all .2s;}
+    .sidebar .nav-icon:hover,.sidebar .nav-icon.active{background:var(--indigo-light);color:var(--indigo);}
+
+    /* MAIN */
+    .main{margin-left:64px;min-height:100vh;}
+
+    /* TOPBAR */
+    .topbar{background:white;border-bottom:1px solid var(--slate-200);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+    .topbar h1{font-size:1rem;font-weight:700;margin:0;}
+    .topbar .sub{font-size:.75rem;color:var(--slate-400);}
+
+    /* CONTENT */
+    .content{padding:24px 28px;}
+
+    /* STAT CARDS */
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+    .stat-card{background:white;border-radius:var(--radius);border:1px solid var(--slate-200);padding:16px 18px;display:flex;align-items:center;gap:14px;}
+    .stat-icon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+    .si-total{background:#eef2ff;color:var(--indigo);}
+    .si-paid{background:#d1fae5;color:var(--green);}
+    .si-pend{background:#fef3c7;color:var(--amber);}
+    .si-money{background:#fce7f3;color:var(--pink);}
+    .si-adult{background:#dbeafe;color:var(--sky);}
+    .si-minor{background:#fef9c3;color:#ca8a04;}
+    .si-male{background:#ede9fe;color:var(--indigo);}
+    .si-female{background:#fce7f3;color:var(--pink);}
+    .si-allergy{background:#fee2e2;color:var(--red);}
+    .si-meds{background:#fef3c7;color:var(--amber);}
+    .si-conf{background:#d1fae5;color:var(--green);}
+    .si-church{background:#e0f2fe;color:var(--sky);}
+    .stat-label{font-size:.68rem;color:var(--slate-400);font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+    .stat-value{font-size:1.6rem;font-weight:800;line-height:1;margin-top:2px;}
+
+    /* CHARTS ROW */
+    .charts-row{display:grid;grid-template-columns:1fr 1fr 2fr;gap:14px;margin-bottom:20px;}
+    .chart-card{background:white;border-radius:var(--radius);border:1px solid var(--slate-200);padding:16px 18px;}
+    .chart-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-400);margin-bottom:12px;}
+    .chart-wrap{position:relative;height:160px;display:flex;align-items:center;justify-content:center;}
+    .chart-wrap-bar{position:relative;height:160px;}
+
+    /* CONFERENCE SUMMARY */
+    .conf-summary{background:white;border-radius:var(--radius);border:1px solid var(--slate-200);padding:16px 18px;margin-bottom:20px;display:none;}
+    .conf-summary.visible{display:block;}
+    .conf-summary-title{font-size:.85rem;font-weight:700;color:var(--indigo);margin-bottom:12px;}
+    .conf-pills{display:flex;flex-wrap:wrap;gap:8px;}
+    .conf-pill{background:var(--indigo-light);color:var(--indigo);border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;}
+    .conf-pill span{font-weight:400;color:var(--slate-600);}
+
+    /* TOOLBAR */
+    .toolbar{background:white;border-radius:var(--radius);border:1px solid var(--slate-200);padding:12px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
+    .toolbar input,.toolbar select{border:1px solid var(--slate-200);border-radius:8px;padding:7px 11px;font-size:.83rem;outline:none;font-family:'Inter',sans-serif;color:var(--slate-800);background:var(--slate-50);transition:border .2s;}
+    .toolbar input:focus,.toolbar select:focus{border-color:var(--indigo);background:white;}
+    .toolbar input{flex:1;min-width:180px;}
+    .toolbar select{min-width:150px;}
+    .toolbar .spacer{flex:1;}
+    .btn-cz{padding:7px 14px;border-radius:8px;font-size:.82rem;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;white-space:nowrap;}
+    .btn-cz.primary{background:var(--indigo);color:white;}
+    .btn-cz.primary:hover{background:var(--indigo-dark);}
+    .btn-cz.outline{background:white;color:var(--slate-600);border:1px solid var(--slate-200);}
+    .btn-cz.outline:hover{border-color:var(--indigo);color:var(--indigo);}
+    .btn-cz.success{background:var(--green);color:white;}
+    .btn-cz.success:hover{background:#059669;}
+
+    /* TABLE */
+    .table-wrap{background:white;border-radius:var(--radius);border:1px solid var(--slate-200);overflow:hidden;}
+    .tabulator{border:none!important;background:white!important;}
+    .tabulator-header{background:var(--slate-50)!important;border-bottom:1px solid var(--slate-200)!important;}
+    .tabulator-col{background:var(--slate-50)!important;border-right:1px solid var(--slate-100)!important;}
+    .tabulator-col-title{font-size:.68rem!important;font-weight:700!important;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-400)!important;}
+    .tabulator-row{border-bottom:1px solid var(--slate-100)!important;transition:background .15s;}
+    .tabulator-row:hover{background:var(--slate-50)!important;}
+    .tabulator-row.tabulator-selected{background:var(--indigo-light)!important;}
+    .tabulator-cell{font-size:.82rem!important;color:var(--slate-800)!important;}
+    .tabulator-footer{background:var(--slate-50)!important;border-top:1px solid var(--slate-200)!important;font-size:.8rem!important;}
+
+    /* PILLS */
+    .pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:999px;font-size:.7rem;font-weight:600;}
+    .pill.paid{background:#d1fae5;color:#065f46;}
+    .pill.pend{background:#fef3c7;color:#92400e;}
+    .pill.allergy{background:#fee2e2;color:#991b1b;}
+    .pill.meds{background:#fef9c3;color:#854d0e;}
+    .pill.male{background:#ede9fe;color:#5b21b6;}
+    .pill.female{background:#fce7f3;color:#9d174d;}
+
+    /* MODAL */
+    .modal-content{border-radius:16px;border:none;box-shadow:0 20px 60px rgba(0,0,0,.15);}
+    .modal-header{border-bottom:none;padding:24px 24px 0;}
+    .modal-body{padding:20px 24px 24px;}
+    .modal-footer{border-top:none;padding:0 24px 20px;}
+    .hero-card{background:linear-gradient(135deg,#6366f1 0%,#4f46e5 100%);border-radius:12px;padding:20px;color:white;display:flex;align-items:center;gap:16px;margin-bottom:20px;}
+    .hero-avatar{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:800;flex-shrink:0;}
+    .hero-name{font-size:1.1rem;font-weight:700;}
+    .hero-sub{font-size:.8rem;opacity:.8;margin-top:2px;}
+    .section-title{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--indigo);margin:16px 0 8px;}
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .detail-item{background:var(--slate-50);border-radius:8px;padding:10px 12px;}
+    .detail-item .lbl{font-size:.68rem;color:var(--slate-400);font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+    .detail-item .val{font-size:.85rem;color:var(--slate-800);font-weight:500;margin-top:2px;word-break:break-word;}
+    .detail-item.full{grid-column:1/-1;}
+
+    /* FLOATING STATUS */
+    #campaStatus{position:fixed;right:16px;bottom:16px;background:rgba(15,23,42,.88);color:white;padding:8px 14px;border-radius:8px;font-size:.75rem;z-index:1100;backdrop-filter:blur(6px);box-shadow:0 4px 16px rgba(0,0,0,.2);max-width:320px;}
+
+    @media(max-width:900px){
+      .stats-grid{grid-template-columns:repeat(2,1fr);}
+      .charts-row{grid-template-columns:1fr 1fr;}
+    }
+    @media(max-width:600px){
+      .stats-grid{grid-template-columns:1fr 1fr;}
+      .charts-row{grid-template-columns:1fr;}
+      .sidebar{display:none;}
+      .main{margin-left:0;}
+      .detail-grid{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="brand">CZ</div>
+  <div class="nav-icon active" title="Dashboard"><i class="fa-solid fa-table-columns"></i></div>
+  <div class="nav-icon" title="Actualizar" id="btnReloadSide"><i class="fa-solid fa-rotate"></i></div>
+  <div class="nav-icon" title="Exportar CSV" id="downloadCsvSide"><i class="fa-solid fa-file-csv"></i></div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div>
+      <div class="fw-700">CampaZonal Dashboard</div>
+      <div class="sub">Gestión de inscripciones y pagos</div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn-cz outline" id="btnReload"><i class="fa-solid fa-rotate"></i> Actualizar</button>
+      <button class="btn-cz success" id="downloadCsv"><i class="fa-solid fa-file-csv"></i> Exportar</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Stats Row 1 -->
+    <div class="stats-grid" id="statsGrid1">
+      <div class="stat-card"><div class="stat-icon si-total"><i class="fa-solid fa-users"></i></div><div><div class="stat-label">Total</div><div class="stat-value" id="statTotal">0</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-paid"><i class="fa-solid fa-circle-check"></i></div><div><div class="stat-label">Pagados</div><div class="stat-value" style="color:var(--green)" id="statPaid">0</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-pend"><i class="fa-solid fa-clock"></i></div><div><div class="stat-label">Pendientes</div><div class="stat-value" style="color:var(--amber)" id="statPending">0</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-money"><i class="fa-solid fa-coins"></i></div><div><div class="stat-label">Monto Pend. ₡</div><div class="stat-value" style="color:var(--pink);font-size:1.2rem" id="statMoney">0</div></div></div>
+    </div>
+
+    <!-- Stats Row 2 -->
+    <div class="stats-grid" style="margin-bottom:20px">
+      <div class="stat-card"><div class="stat-icon si-adult"><i class="fa-solid fa-person"></i></div><div><div class="stat-label">Mayores (18+)</div><div class="stat-value" style="color:var(--sky)" id="statAdult">0</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-minor"><i class="fa-solid fa-child"></i></div><div><div class="stat-label">Menores</div><div class="stat-value" style="color:#ca8a04" id="statMinor">0</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-male"><i class="fa-solid fa-mars"></i></div><div><div class="stat-label">Hombres</div><div class="stat-value" style="color:var(--indigo)" id="statMale">0</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-female"><i class="fa-solid fa-venus"></i></div><div><div class="stat-label">Mujeres</div><div class="stat-value" style="color:var(--pink)" id="statFemale">0</div></div></div>
+    </div>
+
+    <!-- Stats Row 3 -->
+    <div class="stats-grid" style="margin-bottom:20px">
+      <div class="stat-card"><div class="stat-icon si-allergy"><i class="fa-solid fa-triangle-exclamation"></i></div><div><div class="stat-label">Con Alergias</div><div class="stat-value" style="color:var(--red)" id="statAllergy">0</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-meds"><i class="fa-solid fa-pills"></i></div><div><div class="stat-label">Con Medicam.</div><div class="stat-value" style="color:var(--amber)" id="statMeds">0</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-conf"><i class="fa-solid fa-map-location-dot"></i></div><div><div class="stat-label">Conferencias</div><div class="stat-value" style="color:var(--green)" id="statConf">0</div></div></div>
+      <div class="stat-card"><div class="stat-icon si-church"><i class="fa-solid fa-church"></i></div><div><div class="stat-label">Iglesias</div><div class="stat-value" style="color:var(--sky)" id="statChurch">0</div></div></div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">👫 Género</div>
+        <div class="chart-wrap"><canvas id="chartGender"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🎂 Edad</div>
+        <div class="chart-wrap"><canvas id="chartAge"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🗺️ Por Conferencia</div>
+        <div class="chart-wrap-bar"><canvas id="chartConf"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Conference Summary (shown when filter active) -->
+    <div class="conf-summary" id="confSummary">
+      <div class="conf-summary-title" id="confSummaryTitle"></div>
+      <div class="conf-pills" id="confSummaryPills"></div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <input type="text" id="quickSearch" placeholder="🔍  Buscar por nombre...">
+      <select id="filterConference"><option value="">Todas las Conferencias</option></select>
+      <select id="filterChurch"><option value="">Todas las Iglesias</option></select>
+      <select id="filterGender"><option value="">Todos los Géneros</option><option value="Masculino">Masculino</option><option value="Femenino">Femenino</option></select>
+      <select id="filterAge"><option value="">Todos</option><option value="mayor">Mayores (18+)</option><option value="menor">Menores</option></select>
+      <select id="filterStatus"><option value="">Todos los Estados</option><option value="Pagado">Pagado</option><option value="Pendiente">Pendiente</option></select>
+      <div class="spacer"></div>
+      <button class="btn-cz primary" id="markPaidBulk"><i class="fa-solid fa-money-bill-wave"></i> Marcar Pagado</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <div id="table-container"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal Detalle -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fw-700 mb-0">Ficha del Participante</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer">
+        <button id="modalMarkPaid" class="btn-cz success"><i class="fa-solid fa-check"></i> Marcar pagado</button>
+        <button type="button" class="btn-cz outline" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="campaStatus">Iniciando...</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxoqjQo5xf9S8NV47DDekJi-OGtfIdbXYlkf9xkcVhyE2zJwO-Rxoc9juOsNORRD08/exec';
+
+let table, rawData = [], currentDetailKey = '';
+let chartGender, chartAge, chartConf;
+
+// ── FIELD LABELS ──
+const FIELD_LABELS = {
+  "Marca temporal":"📅 Fecha de registro","Nombre completo":"👤 Nombre","Edad":"🎂 Edad",
+  "Indique su género":"⚧ Género","Número de teléfono personal":"📱 Teléfono",
+  "Nombre del contacto de emergencia":"🚨 Contacto emergencia",
+  "Número de teléfono del contacto de emergencia":"📞 Tel. emergencia",
+  "Alergias / restricciones alimentarias ":"🥜 Alergias",
+  "En caso de sí, indique cuál o cuáles":"⚠️ Detalle alergias",
+  "Toma algún medicamento":"💊 Medicamento",
+  " En caso de sí indique, (qué + a qué hora)  ":"💊 Detalle medicamento",
+  "  Talla de camiseta  \n    Ej: L":"👕 Talla",
+  "Nivel de competitividad\n3 = Muy competitivo\n2 = Competitivo\n1 = Soy poco competitivo":"🏆 Competitividad",
+  "Adjunte el permiso de menor de edad":"📄 Permiso menor",
+  "Adjunte fotos de la cédula por ambos lados del encargado legal (En caso de ser menor de edad)":"🪪 Cédula encargado",
+  "Adjunte fotos de la cédula por ambos lados del menor (En caso de ser menor de edad)":"🪪 Cédula menor",
+  "Nombre completo de su encargado Juvenil":"👨‍💼 Encargado Juvenil",
+  "Número de su encargado Juvenil":"📱 Tel. Encargado",
+  "Nombre completo de su Pastor":"⛪ Pastor",
+  "Selecciona tu conferencia zonal":"🗺️ Conferencia",
+  "Iglesia":"🏛️ Iglesia",
+  "Responder Solo en caso de ser mayor de edad.  CONSENTIMIENTO PARA USO DE IMÁGENES Autorizo / No autorizo (marcar uno) que se utilicen fotografías o videos del/de la participante para fines informativos y promocionales de la actividad (redes sociales, publicaciones de la iglesia, boletines). ":"📸 Consentimiento imágenes",
+  "Monto debitado":"💰 Monto pagado","Monto Pendiente":"⏳ Monto pendiente"
+};
+const fl = k => FIELD_LABELS[k] || k;
+
+// ── INIT TABLE ──
+function initTable(){
+  table = new Tabulator("#table-container",{
+    height:"480px", layout:"fitDataFill", movableColumns:true,
+    pagination:"local", paginationSize:15,
+    placeholder:"<div style='padding:40px;color:#94a3b8;font-size:.9rem'>Cargando datos...</div>",
+    selectable:true,
+    columns:[
+      { title:"Estado", field:"_estado", width:110, hozAlign:"center",
+        formatter:c=>`<span class="pill ${c.getValue()==='Pagado'?'paid':'pend'}">${c.getValue()==='Pagado'?'✓ Pagado':'⏳ Pend.'}</span>` },
+      { title:"Nombre", field:"Nombre completo", minWidth:200 },
+      { title:"Edad", field:"Edad", width:60, hozAlign:"center" },
+      { title:"Género", field:"Indique su género", width:90, hozAlign:"center",
+        formatter:c=>{ const v=c.getValue()||''; const m=/masculino|hombre|male/i.test(v); const f=/femenino|mujer|female/i.test(v); return m?`<span class="pill male">♂ M</span>`:f?`<span class="pill female">♀ F</span>`:v||'—'; } },
+      { title:"Iglesia", field:"Iglesia", minWidth:150 },
+      { title:"Conferencia", field:"Selecciona tu conferencia zonal", minWidth:150 },
+      { title:"Teléfono", field:"Número de teléfono personal", width:120 },
+      { title:"Monto ₡", field:"_monto", width:110, hozAlign:"right", sorter:"number",
+        formatter:c=>c.getValue()?'<span style="font-weight:600;color:#ef4444">₡'+Number(c.getValue()).toLocaleString('es-CR')+'</span>':'<span style="color:#10b981;font-weight:600">Al día ✓</span>' },
+      { title:"Alerg.", field:"Alergias / restricciones alimentarias ", width:75, hozAlign:"center",
+        formatter:c=>c.getValue()==='Sí'?'<span class="pill allergy">Sí</span>':'<span style="color:#94a3b8">—</span>' },
+      { title:"", hozAlign:"center", headerSort:false, width:46,
+        formatter:()=>`<span style="color:#4f46e5;cursor:pointer;font-size:15px"><i class="fa fa-eye"></i></span>`,
+        cellClick:(e,cell)=>openDetailModal(cell.getRow().getData()) }
+    ],
+    rowClick:(e,row)=>openDetailModal(row.getData())
+  });
+}
+
+// ── LOAD DATA ──
+async function loadData(){
+  setStatus('Cargando datos...');
+  try {
+    const res = await fetch(APPS_SCRIPT_URL,{cache:'no-store',credentials:'omit'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const text = await res.text();
+    try{ handleJson(JSON.parse(text)); return; }catch(_){}
+    const m=text.match(/^[\w$]+\(([\s\S]*)\);?$/);
+    if(m){ handleJson(JSON.parse(m[1])); return; }
+    throw new Error('Formato no reconocido');
+  } catch(err){
+    setStatus('Fetch falló — intentando JSONP...');
+    try{ handleJson(await loadJsonp(APPS_SCRIPT_URL)); }
+    catch(e2){ setStatus('Error: '+e2.message); alert('No se pudieron cargar los datos.\n'+e2.message); }
+  }
+}
+
+function loadJsonp(url){
+  return new Promise((res,rej)=>{
+    const cb='__cz_'+Math.floor(Math.random()*1e6);
+    window[cb]=d=>{try{res(d);}catch(e){rej(e);}finally{delete window[cb];s.remove();}};
+    const s=document.createElement('script');
+    s.src=url+(url.includes('?')?'&':'?')+'callback='+cb;
+    s.onerror=()=>{delete window[cb];s.remove();rej(new Error('JSONP error'));};
+    document.body.appendChild(s);
+    setTimeout(()=>{if(window[cb]){delete window[cb];try{s.remove();}catch(_){}rej(new Error('JSONP timeout'));}},6000);
+  });
+}
+
+function handleJson(json){
+  try{
+    let headers=[],rows=[];
+    if(Array.isArray(json)&&json.length&&Array.isArray(json[0])){ headers=json[0].map(String); rows=json.slice(1); }
+    else if(json?.headers&&json?.rows){ headers=json.headers.map(String); rows=json.rows; }
+    else if(Array.isArray(json)&&typeof json[0]==='object'){
+      headers=[...new Set(json.flatMap(o=>Object.keys(o)))];
+      rows=json.map(o=>headers.map(h=>o[h]??''));
+    } else throw new Error('Formato JSON no reconocido');
+
+    rawData=rows.map(r=>{
+      const obj={};
+      headers.forEach((h,i)=>obj[h]=r[i]!==undefined?String(r[i]):'');
+      const monto=parseFloat(String(obj["Monto Pendiente"]||obj["Monto"]||'0').replace(/[^\d.-]/g,''))||0;
+      obj._monto=monto;
+      obj._estado=monto<=0?'Pagado':'Pendiente';
+      const edad=parseInt(obj["Edad"])||0;
+      obj._esMayor=edad>=18;
+      const gen=(obj["Indique su género"]||'').toLowerCase();
+      obj._genero=/masculino|hombre|male/.test(gen)?'M':/femenino|mujer|female/.test(gen)?'F':'';
+      return obj;
+    });
+
+    llenarFiltros(rawData);
+    table.setData(rawData);
+    actualizarEstadisticas(rawData);
+    actualizarGraficos(rawData);
+    setStatus('✓ '+rawData.length+' registros cargados');
+  } catch(e){ alert('Error procesando datos: '+e.message); setStatus('Error: '+e.message); }
+}
+
+function llenarFiltros(data){
+  const confs=[...new Set(data.map(d=>d["Selecciona tu conferencia zonal"]))].filter(Boolean);
+  const iglesias=[...new Set(data.map(d=>d["Iglesia"]))].filter(Boolean);
+  const cf=document.getElementById("filterConference");
+  const ig=document.getElementById("filterChurch");
+  cf.innerHTML='<option value="">Todas las Conferencias</option>';
+  ig.innerHTML='<option value="">Todas las Iglesias</option>';
+  confs.sort().forEach(c=>cf.innerHTML+=`<option value="${esc(c)}">${esc(c)}</option>`);
+  iglesias.sort().forEach(i=>ig.innerHTML+=`<option value="${esc(i)}">${esc(i)}</option>`);
+}
+
+function actualizarEstadisticas(data){
+  const total=data.length;
+  const paid=data.filter(d=>d._estado==='Pagado').length;
+  const pend=data.filter(d=>d._estado==='Pendiente').length;
+  const money=data.reduce((s,d)=>s+(d._monto||0),0);
+  const adults=data.filter(d=>d._esMayor).length;
+  const minors=data.filter(d=>!d._esMayor&&parseInt(d["Edad"])>0).length;
+  const males=data.filter(d=>d._genero==='M').length;
+  const females=data.filter(d=>d._genero==='F').length;
+  const allergy=data.filter(d=>/sí|si/i.test(d["Alergias / restricciones alimentarias "]||'')).length;
+  const meds=data.filter(d=>/sí|si/i.test(d["Toma algún medicamento"]||'')).length;
+  const confs=new Set(data.map(d=>d["Selecciona tu conferencia zonal"]).filter(Boolean)).size;
+  const churches=new Set(data.map(d=>d["Iglesia"]).filter(Boolean)).size;
+
+  document.getElementById("statTotal").textContent=total;
+  document.getElementById("statPaid").textContent=paid;
+  document.getElementById("statPending").textContent=pend;
+  document.getElementById("statMoney").textContent='₡'+money.toLocaleString('es-CR');
+  document.getElementById("statAdult").textContent=adults;
+  document.getElementById("statMinor").textContent=minors;
+  document.getElementById("statMale").textContent=males;
+  document.getElementById("statFemale").textContent=females;
+  document.getElementById("statAllergy").textContent=allergy;
+  document.getElementById("statMeds").textContent=meds;
+  document.getElementById("statConf").textContent=confs;
+  document.getElementById("statChurch").textContent=churches;
+}
+
+function actualizarGraficos(data){
+  const males=data.filter(d=>d._genero==='M').length;
+  const females=data.filter(d=>d._genero==='F').length;
+  const other=data.length-males-females;
+  const adults=data.filter(d=>d._esMayor).length;
+  const minors=data.filter(d=>!d._esMayor&&parseInt(d["Edad"])>0).length;
+
+  // Conf counts
+  const confMap={};
+  data.forEach(d=>{ const c=d["Selecciona tu conferencia zonal"]; if(c){ confMap[c]=(confMap[c]||0)+1; } });
+  const confLabels=Object.keys(confMap).sort((a,b)=>confMap[b]-confMap[a]);
+  const confVals=confLabels.map(k=>confMap[k]);
+
+  const COLORS=['#4f46e5','#ec4899','#94a3b8'];
+  const COLORS_AGE=['#0ea5e9','#f59e0b'];
+  const COLORS_CONF=['#4f46e5','#6366f1','#818cf8','#a5b4fc','#c7d2fe','#e0e7ff','#10b981','#34d399','#6ee7b7','#0ea5e9','#38bdf8','#7dd3fc'];
+
+  const donutOpts={responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12,padding:8}}}};
+
+  if(chartGender) chartGender.destroy();
+  chartGender=new Chart(document.getElementById('chartGender'),{
+    type:'doughnut',
+    data:{labels:['Hombres','Mujeres','Otro'],datasets:[{data:[males,females,other],backgroundColor:COLORS,borderWidth:0}]},
+    options:donutOpts
+  });
+
+  if(chartAge) chartAge.destroy();
+  chartAge=new Chart(document.getElementById('chartAge'),{
+    type:'doughnut',
+    data:{labels:['Mayores (18+)','Menores'],datasets:[{data:[adults,minors],backgroundColor:COLORS_AGE,borderWidth:0}]},
+    options:donutOpts
+  });
+
+  if(chartConf) chartConf.destroy();
+  chartConf=new Chart(document.getElementById('chartConf'),{
+    type:'bar',
+    data:{labels:confLabels,datasets:[{label:'Participantes',data:confVals,backgroundColor:COLORS_CONF.slice(0,confLabels.length),borderRadius:6,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1,font:{size:10}},grid:{color:'#f1f5f9'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}
+  });
+}
+
+function mostrarResumenConferencia(conf, data){
+  const box=document.getElementById('confSummary');
+  const title=document.getElementById('confSummaryTitle');
+  const pills=document.getElementById('confSummaryPills');
+  if(!conf){ box.classList.remove('visible'); return; }
+  const sub=data.filter(d=>d["Selecciona tu conferencia zonal"]===conf);
+  const males=sub.filter(d=>d._genero==='M').length;
+  const females=sub.filter(d=>d._genero==='F').length;
+  const adults=sub.filter(d=>d._esMayor).length;
+  const minors=sub.filter(d=>!d._esMayor&&parseInt(d["Edad"])>0).length;
+  const paid=sub.filter(d=>d._estado==='Pagado').length;
+  const money=sub.reduce((s,d)=>s+(d._monto||0),0);
+  title.textContent='📊 Resumen: '+conf;
+  pills.innerHTML=[
+    `<div class="conf-pill">👥 Total <span>${sub.length}</span></div>`,
+    `<div class="conf-pill">♂ Hombres <span>${males}</span></div>`,
+    `<div class="conf-pill">♀ Mujeres <span>${females}</span></div>`,
+    `<div class="conf-pill">🔞 Mayores <span>${adults}</span></div>`,
+    `<div class="conf-pill">🧒 Menores <span>${minors}</span></div>`,
+    `<div class="conf-pill">✅ Pagados <span>${paid}</span></div>`,
+    `<div class="conf-pill">⏳ Pendientes <span>${sub.length-paid}</span></div>`,
+    `<div class="conf-pill">💰 Monto Pend. <span>₡${money.toLocaleString('es-CR')}</span></div>`,
+  ].join('');
+  box.classList.add('visible');
+}
+
+// ── MODAL ──
+function openDetailModal(data){
+  currentDetailKey=detectKeyField();
+  const body=document.getElementById("modalBody");
+  const nombre=data["Nombre completo"]||'';
+  const iglesia=data["Iglesia"]||'';
+  const conf=data["Selecciona tu conferencia zonal"]||'';
+  const estado=data._estado||'';
+
+  let html=`
+    <div class="hero-card">
+      <div class="hero-avatar">${esc(nombre.charAt(0).toUpperCase())}</div>
+      <div style="flex:1">
+        <div class="hero-name">${esc(nombre)}</div>
+        <div class="hero-sub">${esc(iglesia)}${conf?' · '+esc(conf):''}</div>
+      </div>
+      <span class="pill ${estado==='Pagado'?'paid':'pend'}" style="font-size:.8rem">${estado==='Pagado'?'✓ Pagado':'⏳ Pendiente'}</span>
+    </div>`;
+
+  const sections=[
+    {title:'👤 Datos Personales',keys:["Nombre completo","Edad","Indique su género","Número de teléfono personal"]},
+    {title:'🏛️ Iglesia & Liderazgo',keys:["Iglesia","Selecciona tu conferencia zonal","Nombre completo de su encargado Juvenil","Número de su encargado Juvenil","Nombre completo de su Pastor"]},
+    {title:'🚨 Emergencia & Salud',keys:["Nombre del contacto de emergencia","Número de teléfono del contacto de emergencia","Alergias / restricciones alimentarias ","En caso de sí, indique cuál o cuáles","Toma algún medicamento"," En caso de sí indique, (qué + a qué hora)  "]},
+    {title:'👕 Campa Info',keys:["  Talla de camiseta  \n    Ej: L","Nivel de competitividad\n3 = Muy competitivo\n2 = Competitivo\n1 = Soy poco competitivo","Responder Solo en caso de ser mayor de edad.  CONSENTIMIENTO PARA USO DE IMÁGENES Autorizo / No autorizo (marcar uno) que se utilicen fotografías o videos del/de la participante para fines informativos y promocionales de la actividad (redes sociales, publicaciones de la iglesia, boletines). "]},
+    {title:'💰 Pagos',keys:["Monto debitado","Monto Pendiente"]},
+    {title:'📎 Documentos',keys:["Adjunte el permiso de menor de edad","Adjunte fotos de la cédula por ambos lados del encargado legal (En caso de ser menor de edad)","Adjunte fotos de la cédula por ambos lados del menor (En caso de ser menor de edad)"]}
+  ];
+
+  sections.forEach(sec=>{
+    const items=sec.keys.map(k=>{
+      const v=data[k]||''; if(!v) return '';
+      const isLink=/https?:\/\//.test(v);
+      const display=isLink?`<a href="${v.match(/https?:\/\/\S+/)[0].replace(/[.,;:]+$/,'')}" target="_blank" rel="noreferrer" style="color:var(--indigo)">Ver archivo ↗</a>`:esc(v);
+      const full=sec.title.includes('Documentos')||k.length>60;
+      return `<div class="detail-item${full?' full':''}"><div class="lbl">${fl(k)}</div><div class="val">${display}</div></div>`;
+    }).filter(Boolean).join('');
+    if(!items) return;
+    html+=`<div class="section-title">${sec.title}</div><div class="detail-grid">${items}</div>`;
+  });
+
+  body.innerHTML=html;
+  document.getElementById('modalMarkPaid').dataset.keyValue=data[currentDetailKey]||'';
+  new bootstrap.Modal(document.getElementById('detailModal')).show();
+}
+
+async function markPaidByKey(keyValue){
+  if(!keyValue) return alert('No se encontró identificador.');
+  if(!confirm('¿Marcar como pagado este registro?')) return;
+  try{
+    const r=await fetch(APPS_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'markPaid',keyField:detectKeyField(),keyValue,updateField:'Monto Pendiente',newValue:'0'})});
+    const j=await r.json();
+    if(j?.success){ alert('Actualizado como pagado.'); await loadData(); }
+    else alert('No se pudo actualizar. Revisa la consola.');
+  }catch(e){ alert('Error: '+e.message); }
+}
+
+function detectKeyField(){
+  const s=table.getData()[0]||{};
+  return Object.keys(s).find(k=>/marca temporal|timestamp|fecha/i.test(k))||Object.keys(s)[0]||'Timestamp';
+}
+
+// ── FILTROS COMBINADOS ──
+function applyFilters(){
+  const search=document.getElementById('quickSearch').value.trim();
+  const conf=document.getElementById('filterConference').value;
+  const church=document.getElementById('filterChurch').value;
+  const gender=document.getElementById('filterGender').value;
+  const age=document.getElementById('filterAge').value;
+  const status=document.getElementById('filterStatus').value;
+
+  let filtered=rawData.filter(d=>{
+    if(search && !(d["Nombre completo"]||'').toLowerCase().includes(search.toLowerCase())) return false;
+    if(conf && d["Selecciona tu conferencia zonal"]!==conf) return false;
+    if(church && d["Iglesia"]!==church) return false;
+    if(gender){
+      const g=(d["Indique su género"]||'').toLowerCase();
+      if(gender==='Masculino'&&!/masculino|hombre|male/.test(g)) return false;
+      if(gender==='Femenino'&&!/femenino|mujer|female/.test(g)) return false;
+    }
+    if(age==='mayor'&&!d._esMayor) return false;
+    if(age==='menor'&&(d._esMayor||!parseInt(d["Edad"]))) return false;
+    if(status && d._estado!==status) return false;
+    return true;
+  });
+
+  table.setData(filtered);
+  actualizarEstadisticas(filtered);
+  actualizarGraficos(filtered);
+  mostrarResumenConferencia(conf, filtered);
+}
+
+const esc=s=>String(s||'').replaceAll('&','&').replaceAll('<','<').replaceAll('>','>');
+const deb=(fn,t=250)=>{let tm;return(...a)=>{clearTimeout(tm);tm=setTimeout(()=>fn(...a),t);};};
+function setStatus(m){const el=document.getElementById('campaStatus');if(el)el.textContent=m;}
+
+// ── EVENTS ──
+document.getElementById('btnReload').addEventListener('click',()=>loadData());
+document.getElementById('btnReloadSide').addEventListener('click',()=>loadData());
+document.getElementById('downloadCsv').addEventListener('click',()=>table.download("csv","CampaZonal_Reporte.csv"));
+document.getElementById('downloadCsvSide').addEventListener('click',()=>table.download("csv","CampaZonal_Reporte.csv"));
+document.getElementById('quickSearch').addEventListener('input',deb(applyFilters));
+document.getElementById('filterConference').addEventListener('change',applyFilters);
+document.getElementById('filterChurch').addEventListener('change',applyFilters);
+document.getElementById('filterGender').addEventListener('change',applyFilters);
+document.getElementById('filterAge').addEventListener('change',applyFilters);
+document.getElementById('filterStatus').addEventListener('change',applyFilters);
+document.getElementById('markPaidBulk').addEventListener('click',async()=>{
+  const sel=table.getSelectedData();
+  if(!sel.length) return alert('Seleccione filas primero.');
+  if(!confirm(`¿Marcar ${sel.length} fila(s) como pagado?`)) return;
+  for(const r of sel) await markPaidByKey(r[detectKeyField()]);
+});
+document.getElementById('modalMarkPaid').addEventListener('click',e=>markPaidByKey(e.target.dataset.keyValue));
+
+initTable();
+loadData();
+</script>
+</body>
+</html>
